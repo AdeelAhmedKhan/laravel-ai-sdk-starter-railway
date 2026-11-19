@@ -50,9 +50,18 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
 # ------------------------------------------------------------------
 FROM php:8.5.12-fpm-alpine AS runtime
 
+# The -dev packages are needed to COMPILE the extensions below and are
+# removed again in the same layer. The first live Railway deploy test on
+# 2026-11-19 failed here: with only the runtime libs present, the
+# pdo_pgsql configure step died with "Cannot find libpq-fe.h or pq
+# library (libpq)". The build stage above had the -dev packages all
+# along; this stage was missing them.
 RUN apk add --no-cache nginx libzip libpq sqlite-libs icu \
+    && apk add --no-cache --virtual .build-deps \
+        libzip-dev libpq-dev sqlite-dev icu-dev \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql pdo_sqlite bcmath intl zip pcntl opcache \
+    && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
 # PHP hardening: see docker/php/security.ini for what each line does.
