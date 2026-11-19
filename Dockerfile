@@ -33,7 +33,12 @@ FROM php:8.5.12-cli-alpine AS build
 
 RUN apk add --no-cache git unzip libzip-dev libpq-dev sqlite-dev icu-dev \
     && docker-php-ext-install -j"$(nproc)" \
-        pdo_pgsql pdo_sqlite bcmath intl zip pcntl opcache
+        pdo_pgsql pdo_sqlite bcmath intl zip pcntl
+# No opcache in the install list: PHP 8.5 builds OPcache into the binary,
+# so there is no shared module to install and docker-php-ext-install
+# opcache fails with "cp: can't stat 'modules/*'". Found by the second
+# live Railway deploy test on 2026-11-19. The settings in
+# docker/php/opcache.ini still apply to the built-in extension.
 
 COPY --from=composer:2.9.8 /usr/bin/composer /usr/bin/composer
 
@@ -60,7 +65,7 @@ RUN apk add --no-cache nginx libzip libpq sqlite-libs icu \
     && apk add --no-cache --virtual .build-deps \
         libzip-dev libpq-dev sqlite-dev icu-dev \
     && docker-php-ext-install -j"$(nproc)" \
-        pdo_pgsql pdo_sqlite bcmath intl zip pcntl opcache \
+        pdo_pgsql pdo_sqlite bcmath intl zip pcntl \
     && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
