@@ -14,7 +14,13 @@ export PORT
 
 # Render nginx config from the template.
 # (envsubst is not in the Alpine image; use sed on the one variable.)
-sed "s|\${PORT}|${PORT}|g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+# The rendered file goes to /run/nginx, NOT /etc/nginx: the container
+# runs as www-data and /etc/nginx is root-owned and read-only to it.
+# The third live Railway deploy test on 2026-11-19 died here with
+# "can't create /etc/nginx/nginx.conf: Permission denied", nginx never
+# started, and the healthcheck failed. /run/nginx is created and
+# chowned to www-data in the Dockerfile for exactly this purpose.
+sed "s|\${PORT}|${PORT}|g" /etc/nginx/nginx.conf.template > /run/nginx/nginx.conf
 
 # Laravel caches: rebuild on every container start so a stale
 # config cache from the build image can never ship.
@@ -35,5 +41,9 @@ fi
 php artisan migrate --force
 
 # php-fpm in the background, nginx in the foreground (PID 1).
+# -c points nginx at the config rendered into /run/nginx above; its
+# relative includes (fastcgi_params) still resolve against the
+# compiled prefix /etc/nginx, and mime.types is included by absolute
+# path, so nothing else moves.
 php-fpm -D
-exec nginx -g 'daemon off;'
+exec nginx -c /run/nginx/nginx.conf -g 'daemon off;'
