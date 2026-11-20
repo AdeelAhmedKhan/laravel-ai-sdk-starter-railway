@@ -55,16 +55,46 @@
       }
     },
     {
-      "image": "postgres:18",
       "name": "Postgres",
-      "note": "Railway Postgres service. The app connects over the private network via DATABASE_URL.",
+      "note": "PostgreSQL 18 + pgvector, built from this repo (docker/postgres/Dockerfile): the official postgres:18.7 image, digest pinned, plus pgvector 0.8.7 from PGDG. Replaces Railway's stock postgres-ssl:18, which has no pgvector, while keeping its contract: same major version, same volume layout (PGDATA pinned to /var/lib/postgresql/data), same variables, TLS on by default via a self-signed certificate generated at first init. Existing deployments are snapshots and are not changed by this template update; if an owner applies the update, the new image starts on their existing data directory and pgvector becomes available with no data change. The app connects over the private network via DATABASE_URL.",
       "publicNetworking": false,
       "restartPolicy": "ON_FAILURE",
+      "source": {
+        "dockerfilePath": "docker/postgres/Dockerfile",
+        "note": "Builds the template's own PostgreSQL 18 + pgvector image from this repo.",
+        "repo": "AdeelAhmedKhan/laravel-ai-sdk-starter-railway"
+      },
       "type": "database",
+      "variables": {
+        "DATABASE_URL": {
+          "description": "Connection string for other services in the same project. Defined on the Postgres service itself because a repo-built service does not get one generated for it.",
+          "value": "postgres://${{Postgres.POSTGRES_USER}}:${{Postgres.POSTGRES_PASSWORD}}@${{Postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/${{Postgres.POSTGRES_DB}}"
+        },
+        "PGDATA": {
+          "description": "Data directory, pinned to the layout the stock Railway image uses so existing volumes keep working. Also set as ENV in the image; declared here so it is visible in the deploy form.",
+          "value": "/var/lib/postgresql/data"
+        },
+        "PG_SSL": {
+          "description": "on (default): at first init a self-signed TLS certificate is generated into the data directory and ssl is switched on. off skips that and runs without TLS.",
+          "value": "on"
+        },
+        "POSTGRES_DB": {
+          "description": "Application database, created at first init. The vector extension is created in it at first init.",
+          "value": "railway"
+        },
+        "POSTGRES_PASSWORD": {
+          "description": "Generated at deploy time by the template secret() function. The alphabet is deliberately URL-safe (letters, digits, dash, underscore): the password is embedded in DATABASE_URL, and a '/' from a base64 alphabet breaks URI parsing in libpq (proven live on the PostgreSQL 19 template, 2026-11-20). Never a literal value.",
+          "value": "${{ secret(43, \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_\") }}"
+        },
+        "POSTGRES_USER": {
+          "description": "Database superuser, same as the stock Railway image.",
+          "value": "postgres"
+        }
+      },
       "volumes": [
         {
           "mountPath": "/var/lib/postgresql/data",
-          "note": "Persistent volume. Without it, data is lost on redeploy."
+          "note": "Persistent volume. Without it, data is lost on redeploy. Same mount path as the stock image used, so an existing deployment that applies this update keeps its data in place."
         }
       ]
     }

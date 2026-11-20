@@ -19,7 +19,7 @@ SDK).
 | PHP | **8.5.12** (exact, Dockerfile pin) | endoflife.date, 2026-11-10 |
 | Laravel | **13.40.0** (exact) | Packagist, 2026-11-10 |
 | Laravel AI SDK | **1.3.0** (exact) | Packagist, 2026-11-10 |
-| Postgres | 18 (Railway service) | Railway Postgres |
+| Postgres | **18.7** + **pgvector 0.8.7** (exact, Dockerfile pin) | Docker Hub + PGDG, 2026-11-20 |
 | Web server | nginx + php-fpm (Alpine) | — |
 
 Why a Dockerfile and not Railpack/Nixpacks: only a Dockerfile
@@ -33,8 +33,15 @@ silently using a different PHP — that is the intended behaviour.
 ## What it deploys
 
 - **app** — Laravel + AI SDK, public, healthcheck `/api/health`.
-- **Postgres** — private network, persistent volume
-  (`/var/lib/postgresql/data`).
+- **Postgres** — PostgreSQL 18.7 with the pgvector extension,
+  built from this repo (`docker/postgres/Dockerfile`, official
+  image pinned by digest, pgvector from PGDG). Private network,
+  persistent volume (`/var/lib/postgresql/data`). pgvector is
+  there because the AI SDK's embeddings and Laravel's vector
+  search API need it; Railway's stock Postgres image does not
+  ship it. The vector extension is created in the app database
+  at first start, and TLS is on by default with a self-signed
+  certificate, as with the stock image.
 
 ## Endpoints
 
@@ -166,6 +173,12 @@ broke when the rendered config moved directories.
 - **Running cost over time** — test deploys cost about $0.0002
   each; what the app costs to keep running for a full day has
   not been measured.
+- **pgvector image on Railway** — the PostgreSQL 18 + pgvector
+  image was prepared on 2026-11-20. Its fresh-deploy
+  verification and the existing-data upgrade drill (stock image
+  data directory, then this image over the same volume) are
+  still to run on Railway; until they pass, the published
+  template keeps the stock image and this section stays.
 
 ## Template spec
 

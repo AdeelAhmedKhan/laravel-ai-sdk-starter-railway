@@ -7,8 +7,9 @@ SDK on Railway; keep it runnable, minimal, and honest.
 ## Stack (pinned — do not bump majors casually)
 
 PHP **8.5.12** (exact, via `php:8.5.12-fpm-alpine` in the Dockerfile)
-+ Laravel **13.40.0** + Laravel AI SDK **1.3.0** + Postgres 18
-(Railway service; SQLite only for local parity testing) + nginx
++ Laravel **13.40.0** + Laravel AI SDK **1.3.0** + PostgreSQL 18.7 + pgvector 0.8.7
+(own image, docker/postgres/: official image pinned by digest
++ PGDG; SQLite only for local parity testing) + nginx
 (Alpine). Versions verified 2026-11-10 — Packagist for
 Laravel/AI SDK, endoflife.date for PHP; see README "Stack &
 versions". No Sanctum, no auth scaffolding, no billing, no
@@ -160,5 +161,7 @@ composer audit         # must be clean before any release
   `php:8.5.12-fpm-alpine` image. If that tag ever disappears from
   Docker Hub, the build fails loudly instead of silently using a
   different PHP — that is the intended behaviour.
-- Live deploy and Railway's Postgres service are NOT yet tested —
-  see README "What is still unproven".
+- Live deploy verified end to end on 2026-11-19 with the stock
+  Postgres service. The pgvector image change (2026-11-20) is
+  pending its Railway fresh-deploy verification and upgrade
+  drill — see README "What is still unproven".
