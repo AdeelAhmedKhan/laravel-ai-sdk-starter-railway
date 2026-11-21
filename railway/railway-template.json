@@ -33,8 +33,8 @@
           "value": "<generated at deploy time>"
         },
         "APP_URL": {
-          "description": "Public URL of the deployed app (the Railway domain, once generated).",
-          "value": ""
+          "description": "Public URL of the deployed app. Defaults to the Railway public domain; the deploy form no longer needs it typed by hand.",
+          "value": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
         },
         "DATABASE_URL": {
           "description": "Connection string for the Postgres service in this template.",
@@ -56,7 +56,7 @@
     },
     {
       "name": "Postgres",
-      "note": "PostgreSQL 18 + pgvector, built from this repo (docker/postgres/Dockerfile): the official postgres:18.7 image, digest pinned, plus pgvector 0.8.7 from PGDG. Replaces Railway's stock postgres-ssl:18, which has no pgvector, while keeping its contract: same major version, same volume layout (PGDATA pinned to /var/lib/postgresql/data), same variables, TLS on by default via a self-signed certificate generated at first init. Existing deployments are snapshots and are not changed by this template update; if an owner applies the update, the new image starts on their existing data directory and pgvector becomes available with no data change. The app connects over the private network via DATABASE_URL.",
+      "note": "PostgreSQL 18 + pgvector, built from this repo (docker/postgres/Dockerfile): the official postgres:18.7 image, digest pinned, plus pgvector 0.8.7 from PGDG. Railway's stock postgres-ssl:18 image does also carry pgvector; this custom build is kept because it pins the exact Postgres and pgvector pairing by digest, so the extension version stays under this template's control instead of drifting with the stock image. It keeps the stock contract: same major version, same variables, the volume at /var/lib/postgresql/data with the cluster in its pgdata subdirectory, TLS on by default via a self-signed certificate generated at first init. Existing deployments are snapshots and are not changed by this template update; if an owner applies the update, the new image starts on their existing data directory and pgvector becomes available with no data change. The app connects over the private network via DATABASE_URL.",
       "publicNetworking": false,
       "restartPolicy": "ON_FAILURE",
       "source": {
@@ -71,8 +71,8 @@
           "value": "postgres://${{Postgres.POSTGRES_USER}}:${{Postgres.POSTGRES_PASSWORD}}@${{Postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/${{Postgres.POSTGRES_DB}}"
         },
         "PGDATA": {
-          "description": "Data directory, pinned to the layout the stock Railway image uses so existing volumes keep working. Also set as ENV in the image; declared here so it is visible in the deploy form.",
-          "value": "/var/lib/postgresql/data"
+          "description": "Data directory: the pgdata subdirectory of the volume mount. initdb refuses to run directly in a fresh volume's mount point (it contains a lost+found directory), so the cluster lives one level down, the layout the stock Railway image uses. Also set as ENV in the image; declared here so it is visible in the deploy form.",
+          "value": "/var/lib/postgresql/data/pgdata"
         },
         "PG_SSL": {
           "description": "on (default): at first init a self-signed TLS certificate is generated into the data directory and ssl is switched on. off skips that and runs without TLS.",

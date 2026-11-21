@@ -5,8 +5,9 @@
 # natively, and Laravel 13's vector API (vector columns,
 # Schema::ensureVectorExtensionExists(), whereVectorSimilarTo())
 # works only on PostgreSQL with the pgvector extension. Railway's
-# stock postgres-ssl:18 image does not ship pgvector, so this
-# template builds its own database image instead: the official
+# stock postgres-ssl:18 image does carry pgvector, but the exact
+# Postgres and pgvector pairing inside it drifts as Railway updates
+# the image, so this template builds its own database image instead: the official
 # PostgreSQL 18 image plus pgvector from PGDG, the PostgreSQL
 # project's own apt repository (already configured inside the
 # official image, scoped to PostgreSQL 18). Versions are pinned
@@ -17,11 +18,13 @@
 # - Same major version (18) as the stock image it replaces, so
 #   existing data directories stay readable. A major version
 #   change would not be done this way; it needs dump + restore.
-# - PGDATA is pinned to /var/lib/postgresql/data, the layout the
-#   stock Railway image uses and where existing volumes already
-#   hold their data. (The official image's own default moved to
-#   a versioned subdirectory in 18; without this pin its
-#   entrypoint refuses the existing layout.)
+# - PGDATA is /var/lib/postgresql/data/pgdata: the cluster lives
+#   in the pgdata subdirectory of the volume mount, the layout the
+#   stock Railway image uses, so existing volumes keep working.
+#   initdb refuses to run directly in a fresh volume's mount point
+#   (it contains a lost+found directory). (The official image's own
+#   default moved to a versioned subdirectory in 18; without this
+#   pin its entrypoint refuses the existing layout.)
 # - The service keeps the stock variable contract
 #   (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB /
 #   DATABASE_URL), so the app service needs no change.
@@ -45,8 +48,10 @@ RUN postgres --version | grep -q 'PostgreSQL) 18.7' \
     && openssl version > /dev/null
 
 # Pin the data directory to the layout existing deployments
-# already use (see header). The template's volume mounts here.
-ENV PGDATA=/var/lib/postgresql/data
+# already use (see header). The template's volume mounts at
+# /var/lib/postgresql/data; the cluster lives in its pgdata
+# subdirectory.
+ENV PGDATA=/var/lib/postgresql/data/pgdata
 
 # The official entrypoint runs everything in
 # /docker-entrypoint-initdb.d once, at first start on an empty
@@ -57,6 +62,6 @@ ENV PGDATA=/var/lib/postgresql/data
 # stock Railway SSL image this replaces. Neither runs again on
 # an existing data directory, so an upgraded deployment keeps
 # its data and settings untouched.
-COPY docker/postgres/initdb.d/10-pgvector.sql /docker-entrypoint-initdb.d/10-pgvector.sql
-COPY docker/postgres/initdb.d/20-ssl-certs.sh /docker-entrypoint-initdb.d/20-ssl-certs.sh
+COPY initdb.d/10-pgvector.sql /docker-entrypoint-initdb.d/10-pgvector.sql
+COPY initdb.d/20-ssl-certs.sh /docker-entrypoint-initdb.d/20-ssl-certs.sh
 RUN chmod +x /docker-entrypoint-initdb.d/20-ssl-certs.sh
