@@ -161,7 +161,8 @@ composer audit         # must be clean before any release
   `php:8.5.13-fpm-alpine` image. If that tag ever disappears from
   Docker Hub, the build fails loudly instead of silently using a
   different PHP — that is the intended behaviour.
-- Live deploy verified end to end on 2026-11-19 with the stock
-  Postgres service. The pgvector image change (2026-11-20) is
-  pending its Railway fresh-deploy verification and upgrade
-  drill — see README "What is still unproven".
+- Live deploy verified end to end 2026-11-25: fresh zero-input
+  deploy (PHP 8.5.13, Postgres 18.7, pgvector 0.8.7, TLS 1.3,
+  SHOW ssl on), and the upgrade drill proved an existing deploy
+  does not self-heal SSL; the manual ALTER SYSTEM + reload path
+  is verified and documented in the README.

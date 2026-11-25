@@ -8,8 +8,9 @@ Zero required env vars at deploy.
 
 - **app** — Laravel 13.40.0 + AI SDK 1.3.0 on PHP 8.5.13 (digest pinned)
   (Dockerfile pin), php-fpm + nginx. Public.
-- **Postgres** — Railway Postgres service, Postgres 18, private
-  network, persistent volume.
+- **Postgres** — custom image (official postgres:18.7 pinned by
+  digest + pgvector 0.8.7 from PGDG), SSL on by default on fresh
+  deploys, private network, persistent volume.
 
 ## Variables
 
@@ -46,6 +47,21 @@ run on SQLite (including the SDK's agent conversation tables),
 `/api/health`, `/api/ai/demo` (GET + POST, no-key + validation
 cases) — see `docs/local-test-2026-11-10.md`.
 
-Still untested: live Railway deploy, Railway's Postgres service
-round-trip, Docker build on Railway's side, a live provider call
-(no real key exists in this repo), first-day cost.
+Live-verified on Railway 2026-11-25 (PHP 8.5.13, Laravel 13.40.0,
+AI SDK 1.3.0): fresh zero-input deploy, app and Postgres Online,
+`/api/health` returns db ok with pgsql, `/api/ai/demo` reports
+configured false with no key. Postgres 18.7 with pgvector 0.8.7:
+TLS 1.3 over a required-SSL connection, SHOW ssl on,
+nearest-neighbour order correct.
+
+Upgrade drill 2026-11-25: an existing deploy from 2026-11-21
+(SSL off) updated to the latest commit and redeployed stays on
+SSL off, because init scripts only run on an empty data
+directory. Existing owners enable SSL with two statements as the
+database superuser, then reload: `ALTER SYSTEM SET ssl = 'on';`
+`SELECT pg_reload_conf();` verified to give SHOW ssl on and
+TLS 1.3 with no restart. Certificates are already on the volume
+from first boot.
+
+Still untested: a live provider call (no real key exists in this
+repo), first-day cost.
