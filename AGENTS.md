@@ -6,7 +6,7 @@ SDK on Railway; keep it runnable, minimal, and honest.
 
 ## Stack (pinned — do not bump majors casually)
 
-PHP **8.5.12** (exact, via `php:8.5.12-fpm-alpine` in the Dockerfile)
+PHP **8.5.13** (digest pinned, via `php:8.5.13-fpm-alpine@sha256:087c0ac7…` in the Dockerfile)
 + Laravel **13.40.0** + Laravel AI SDK **1.3.0** + PostgreSQL 18.7 + pgvector 0.8.7
 (own image, docker/postgres/: official image pinned by digest
 + PGDG; SQLite only for local parity testing) + nginx
@@ -45,8 +45,8 @@ healthcheck, zero required env vars at deploy.
 
 - `Dockerfile` — multi-stage, copied from the sibling
   security-hardened Laravel starter. Build stage:
-  `php:8.5.12-cli-alpine` + Composer, installs deps. Runtime
-  stage: `php:8.5.12-fpm-alpine` + nginx, no build tools, runs
+  `php:8.5.13-cli-alpine@sha256:5778fd0b…` + Composer, installs deps. Runtime
+  stage: `php:8.5.13-fpm-alpine@sha256:087c0ac7…` + nginx, no build tools, runs
   as `www-data`. php-fpm + nginx on purpose: mod_php runs the
   interpreter inside the web server, so the php2shell exploit
   runs before application code — never use it.
@@ -158,7 +158,7 @@ composer audit         # must be clean before any release
   `GEMINI_API_KEY`) to make the demo call a real model. All are
   optional: without one, the demo reports `configured: false`.
 - The Dockerfile is the PHP pin: Railway builds the exact
-  `php:8.5.12-fpm-alpine` image. If that tag ever disappears from
+  `php:8.5.13-fpm-alpine` image. If that tag ever disappears from
   Docker Hub, the build fails loudly instead of silently using a
   different PHP — that is the intended behaviour.
 - Live deploy verified end to end on 2026-11-19 with the stock
