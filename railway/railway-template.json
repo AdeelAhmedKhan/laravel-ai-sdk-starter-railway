@@ -15,7 +15,7 @@
     {
       "build": {
         "builder": "DOCKERFILE",
-        "note": "Dockerfile pins php:8.5.12-fpm-alpine exactly. Railpack/Nixpacks resolve PHP fuzzily and cannot pin the patch \u2014 see Dockerfile header."
+        "note": "Dockerfile pins php:8.5.13-fpm-alpine by digest. Railpack/Nixpacks resolve PHP fuzzily and cannot pin the patch \u2014 see Dockerfile header."
       },
       "healthcheckPath": "/api/health",
       "name": "app",

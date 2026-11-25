@@ -6,7 +6,7 @@ Zero required env vars at deploy.
 
 ## What it deploys
 
-- **app** — Laravel 13.40.0 + AI SDK 1.3.0 on PHP 8.5.12
+- **app** — Laravel 13.40.0 + AI SDK 1.3.0 on PHP 8.5.13 (digest pinned)
   (Dockerfile pin), php-fpm + nginx. Public.
 - **Postgres** — Railway Postgres service, Postgres 18, private
   network, persistent volume.
